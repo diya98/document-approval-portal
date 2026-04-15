@@ -11,16 +11,26 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const upload = multer({ dest: 'uploads/' });
-
 let db = {};
 
-// ---------------- SAFE SENDGRID INIT ----------------
-if (!process.env.SENDGRID_API_KEY) {
-  console.error("❌ SENDGRID_API_KEY missing");
-} else {
+// ---------------- SENDGRID INIT ----------------
+if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+  console.error("❌ SENDGRID_API_KEY missing");
 }
+
+// ---------------- MULTER (ONLY PDF ALLOWED) ----------------
+const upload = multer({
+  dest: 'uploads/',
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF files allowed"), false);
+    }
+  }
+});
 
 // ---------------- HOME ----------------
 app.get("/", (req, res) => {
@@ -32,8 +42,12 @@ app.post('/upload', upload.single('file'), (req, res) => {
   try {
     const id = Date.now().toString();
 
+    if (!req.file) {
+      return res.status(400).send("No file uploaded or invalid file type");
+    }
+
     db[id] = {
-      file: req.file?.path,
+      file: req.file.path,
       subject: req.body.subject,
       approvers: [req.body.a1, req.body.a2, req.body.a3],
       step: 0,
@@ -53,15 +67,10 @@ app.post('/upload', upload.single('file'), (req, res) => {
 function sendMail(id) {
   const doc = db[id];
 
-  if (!doc) return console.log("❌ Invalid doc ID");
+  if (!doc) return console.log("Invalid doc ID");
 
   const email = doc.approvers[doc.step];
-
-  if (!email) return console.log("❌ No approver email found");
-
-  if (!process.env.URL || !process.env.EMAIL) {
-    return console.log("❌ Missing URL or EMAIL in env");
-  }
+  if (!email) return console.log("No approver email found");
 
   const link = `${process.env.URL}/approve/${id}`;
 
@@ -90,7 +99,18 @@ app.get('/approve/:id', async (req, res) => {
       return res.status(404).send("Invalid request");
     }
 
+    // ✅ FILE CHECK (FIX FOR PDF ERROR)
+    if (!fs.existsSync(doc.file)) {
+      return res.send("File not found on server");
+    }
+
     const pdfBytes = fs.readFileSync(doc.file);
+
+    // ✅ VALID PDF CHECK
+    if (!pdfBytes || pdfBytes.length < 100) {
+      return res.send("Invalid PDF file uploaded");
+    }
+
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const page = pdfDoc.getPages()[0];
 
