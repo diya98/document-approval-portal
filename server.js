@@ -49,11 +49,17 @@ function sendMail(id) {
   const link = `${process.env.URL}/approve/${id}`;
 
   transporter.sendMail({
-    to: email,
-    subject: doc.subject,
-    html: `<a href="${link}">Open & Approve</a>`
-  });
-}
+  to: email,
+  subject: doc.subject,
+  html: `<a href="${link}">Open & Approve</a>`
+}, (error, info) => {
+  if (error) {
+    console.log("EMAIL ERROR:", error);
+  } else {
+    console.log("EMAIL SENT:", info.response);
+  }
+});
+  
 
 app.get('/approve/:id', async (req, res) => {
   const doc = db[req.params.id];
