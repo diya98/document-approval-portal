@@ -6,12 +6,6 @@ const path = require("path");
 
 const sgMail = require('@sendgrid/mail');
 
-if (!process.env.SENDGRID_API_KEY) {
-  console.error("❌ Missing SENDGRID_API_KEY in environment variables");
-}
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
@@ -21,12 +15,19 @@ const upload = multer({ dest: 'uploads/' });
 
 let db = {};
 
-// -------------------- HOME --------------------
+// ---------------- SAFE SENDGRID INIT ----------------
+if (!process.env.SENDGRID_API_KEY) {
+  console.error("❌ SENDGRID_API_KEY missing");
+} else {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
+
+// ---------------- HOME ----------------
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// -------------------- UPLOAD --------------------
+// ---------------- UPLOAD ----------------
 app.post('/upload', upload.single('file'), (req, res) => {
   try {
     const id = Date.now().toString();
@@ -48,20 +49,18 @@ app.post('/upload', upload.single('file'), (req, res) => {
   }
 });
 
-// -------------------- SEND EMAIL --------------------
+// ---------------- SEND EMAIL ----------------
 function sendMail(id) {
   const doc = db[id];
 
-  if (!doc) {
-    console.log("Invalid doc ID");
-    return;
-  }
+  if (!doc) return console.log("❌ Invalid doc ID");
 
   const email = doc.approvers[doc.step];
 
-  if (!email) {
-    console.log("No approver email found");
-    return;
+  if (!email) return console.log("❌ No approver email found");
+
+  if (!process.env.URL || !process.env.EMAIL) {
+    return console.log("❌ Missing URL or EMAIL in env");
   }
 
   const link = `${process.env.URL}/approve/${id}`;
@@ -82,7 +81,7 @@ function sendMail(id) {
     .catch(error => console.log("EMAIL ERROR:", error.response?.body || error));
 }
 
-// -------------------- APPROVE --------------------
+// ---------------- APPROVE ----------------
 app.get('/approve/:id', async (req, res) => {
   try {
     const doc = db[req.params.id];
@@ -119,7 +118,7 @@ app.get('/approve/:id', async (req, res) => {
   }
 });
 
-// -------------------- SERVER --------------------
+// ---------------- SERVER ----------------
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
