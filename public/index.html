@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Document Approval Portal</title>
+</head>
+<body style="font-family: Arial; text-align:center; margin-top:50px;">
+
+  <h2>📄 Document Approval System</h2>
+
+  <form action="/upload" method="POST" enctype="multipart/form-data">
+    
+    <input type="text" name="subject" placeholder="Subject" required><br><br>
+
+    <input type="email" name="a1" placeholder="Approver 1 Email" required><br><br>
+    <input type="email" name="a2" placeholder="Approver 2 Email" required><br><br>
+    <input type="email" name="a3" placeholder="Approver 3 Email" required><br><br>
+
+    <input type="file" name="file" required><br><br>
+
+    <button type="submit">Upload & Send</button>
+
+  </form>
+
+</body>
+</html>
