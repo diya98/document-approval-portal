@@ -20,12 +20,10 @@ app.use(express.static('public'));
 let db = {};
 
 const transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
-  port: 2525,
-  secure: false,   
+  service: "gmail",
   auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS
+    user: "diyaagarwal01001@gmail.com",
+    pass: "hcgfdxjjrilstqda"
   }
 });
 
