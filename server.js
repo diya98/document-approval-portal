@@ -21,12 +21,14 @@ let db = {};
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, 
+  port: 587,
+  secure: false,   // IMPORTANT
+  requireTLS: true,
   auth: {
-    user: "diyaagarwal01001@gmail.com",
-    pass: "hcgfdxjjrilstqda"
-  }
+    user: process.env.EMAIL,
+    pass: process.env.PASS
+  },
+  connectionTimeout: 10000
 });
 
 app.post('/upload', upload.single('file'), (req, res) => {
