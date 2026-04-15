@@ -1,10 +1,16 @@
 const express = require('express');
+
 const multer = require('multer');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
 const { PDFDocument } = require('pdf-lib');
 
 const app = express();
+
+app.get("/", (req, res) => {
+  res.send("✅ Document Approval Portal is Running!");
+});
+
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.urlencoded({ extended: true }));
